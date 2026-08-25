@@ -1,11 +1,26 @@
 """
 Startup Launcher for AgriSphere Smart Agriculture Platform
 Runs the unified FastAPI REST backend, live IoT telemetry simulator, and web portal.
+Automatically detects an available open port to avoid port conflicts with Docker or other services.
 """
 
 import uvicorn
 import os
 import sys
+import socket
+
+def find_available_port(preferred_ports=[8085, 8001, 8080, 8000, 8888, 5000]):
+    for port in preferred_ports:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            try:
+                s.bind(("0.0.0.0", port))
+                return port
+            except OSError:
+                continue
+    # Fallback to OS assigned port
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("", 0))
+        return s.getsockname()[1]
 
 if __name__ == "__main__":
     # Ensure project root is in sys.path
@@ -13,17 +28,19 @@ if __name__ == "__main__":
     if project_root not in sys.path:
         sys.path.insert(0, project_root)
         
-    print("=" * 70)
+    selected_port = find_available_port()
+
+    print("=" * 75)
     print("🌱 AgriSphere OS - Precision Agriculture & Farm Intelligence Platform")
     print("📡 IoT Gateway & Agronomic Decision Support Server")
-    print("=" * 70)
-    print("🚀 Dashboard URL : http://localhost:8000")
-    print("📖 API Docs URL  : http://localhost:8000/docs")
-    print("=" * 70)
+    print("=" * 75)
+    print(f"🚀 Dashboard Live at : http://localhost:{selected_port}")
+    print(f"📖 Swagger API Docs  : http://localhost:{selected_port}/docs")
+    print("=" * 75)
 
     uvicorn.run(
         "backend.app.main:app",
         host="0.0.0.0",
-        port=8000,
+        port=selected_port,
         reload=False
     )
