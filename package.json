@@ -23,8 +23,8 @@
     "fastapi",
     "remote-sensing"
   ],
-  "author": "AgriSphere Open Source Initiative",
-  "license": "MIT",
+  "author": "AgriSphere Engineering",
+  "license": "UNLICENSED",
   "devDependencies": {
     "prettier": "^3.2.5",
     "typescript": "^5.3.3"
