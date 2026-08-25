@@ -1,0 +1,11 @@
+node_modules
+.git
+.pytest_cache
+__pycache__
+dist
+build
+htmlcov
+.coverage
+coverage.xml
+*.db
+*.sqlite3

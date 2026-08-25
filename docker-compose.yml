@@ -1,0 +1,54 @@
+version: "3.9"
+
+services:
+  # Primary AgriSphere Application & API Server
+  agrisphere-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: agrisphere-app
+    restart: unless-stopped
+    ports:
+      - "8085:8000"
+    environment:
+      - APP_NAME=AgriSphere Smart Agriculture Platform
+      - DEBUG=false
+      - HOST=0.0.0.0
+      - PORT=8000
+      - DATABASE_URL=sqlite:///./agrisphere.db
+      - REDIS_URL=redis://agrisphere-cache:6379/0
+    depends_on:
+      agrisphere-cache:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - agrisphere-net
+
+  # High-Performance In-Memory Telemetry Cache & Message Broker
+  agrisphere-cache:
+    image: redis:7-alpine
+    container_name: agrisphere-cache
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - agrisphere-net
+
+networks:
+  agrisphere-net:
+    driver: bridge
+
+volumes:
+  redis-data:
+    driver: local

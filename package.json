@@ -1,0 +1,32 @@
+{
+  "name": "smart-agriculture-platform",
+  "version": "2.5.0",
+  "description": "Enterprise Precision Agriculture & IoT Farm Intelligence Platform",
+  "private": true,
+  "scripts": {
+    "test": "python -m pytest tests/ -v --cov=. --cov-report=term-missing",
+    "test:coverage": "python -m pytest tests/ -v --cov=. --cov-report=html --cov-report=xml",
+    "lint:py": "ruff check . && flake8 .",
+    "lint:format": "black --check .",
+    "lint:ts": "prettier --check \"**/*.{ts,tsx,js,css,html,json,md}\"",
+    "lint": "npm run lint:py && npm run lint:format",
+    "format": "black . && prettier --write \"**/*.{ts,tsx,js,css,html,json,md}\"",
+    "typecheck": "mypy backend services edge_gateway",
+    "audit:py": "pip-audit -r requirements.txt",
+    "start": "python run_server.py"
+  },
+  "keywords": [
+    "agriculture",
+    "smart-farming",
+    "precision-ag",
+    "iot",
+    "fastapi",
+    "remote-sensing"
+  ],
+  "author": "AgriSphere Open Source Initiative",
+  "license": "MIT",
+  "devDependencies": {
+    "prettier": "^3.2.5",
+    "typescript": "^5.3.3"
+  }
+}
