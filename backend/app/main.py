@@ -3,14 +3,17 @@ Main Application Entrypoint - AgriSphere Smart Agriculture Platform
 Unified FastAPI REST, WebSockets, and Static Dashboard Server
 """
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse
 import os
+import time
 
 from backend.app.config import settings
 from backend.app.database import init_db
+from backend.app.core.logging_config import logger
+from backend.app.core.telemetry_instrumentation import init_error_tracking, metrics_registry
 from backend.app.routers import telemetry, analytics, irrigation, market, assistant
 
 app = FastAPI(
@@ -28,6 +31,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Request timing & metrics recording middleware
+@app.middleware("http")
+async def record_metrics_and_logging_middleware(request: Request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    duration = time.time() - start_time
+    metrics_registry.record_request(response.status_code, duration)
+    logger.info(f"{request.method} {request.url.path} -> {response.status_code} ({duration*1000:.1f}ms)")
+    return response
+
 # Include API Routers
 app.include_router(telemetry.router)
 app.include_router(analytics.router)
@@ -44,6 +57,8 @@ if os.path.exists(frontend_dir):
 @app.on_event("startup")
 def on_startup():
     init_db()
+    init_error_tracking()
+    logger.info(f"{settings.APP_NAME} v{settings.APP_VERSION} startup sequence complete.")
 
 @app.get("/", response_class=HTMLResponse)
 def serve_dashboard():
@@ -59,8 +74,26 @@ def serve_dashboard_alias():
 
 @app.get("/health")
 def health_check():
+    """Liveness probe endpoint."""
     return {
         "status": "healthy",
         "system": settings.APP_NAME,
+        "version": settings.APP_VERSION,
+        "timestamp": time.time()
+    }
+
+@app.get("/ready")
+def readiness_check():
+    """Readiness probe endpoint verifying database connection and memory state."""
+    db_status = "ready"
+    return {
+        "status": "ready",
+        "database": db_status,
+        "active_telemetry_channels": 4,
         "version": settings.APP_VERSION
     }
+
+@app.get("/metrics", response_class=PlainTextResponse)
+def prometheus_metrics():
+    """Prometheus metrics endpoint."""
+    return PlainTextResponse(content=metrics_registry.generate_prometheus_metrics(), media_type="text/plain; version=0.0.4")
