@@ -55,6 +55,14 @@ dist/
 .env.local
 .env.*.local
 
+# Testing & Coverage
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.pytest_cache/
+
 # OS Generated
 .DS_Store
 Thumbs.db
+
